@@ -2,13 +2,256 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Game</title>
+<title>FPS Game</title>
+
+<style>
+body{
+    margin:0;
+    overflow:hidden;
+}
+
+#crosshair{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    font-size:30px;
+    color:white;
+    font-family:Arial;
+    user-select:none;
+}
+</style>
 </head>
 <body>
 
-<h1>Hello Game!</h1>
+<div id="crosshair">+</div>
 
-main.js
+<script type="module">
+
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160/build/three.module.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb);
+
+const camera = new THREE.PerspectiveCamera(
+75,
+window.innerWidth/window.innerHeight,
+0.1,
+1000
+);
+
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth,window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const light = new THREE.DirectionalLight(0xffffff,3);
+light.position.set(10,20,10);
+scene.add(light);
+
+const floor = new THREE.Mesh(
+new THREE.PlaneGeometry(200,200),
+new THREE.MeshLambertMaterial({color:0x4CAF50})
+);
+
+floor.rotation.x = -Math.PI/2;
+scene.add(floor);
+
+const targets = [];
+
+for(let i=0;i<30;i++){
+
+const box = new THREE.Mesh(
+new THREE.BoxGeometry(2,2,2),
+new THREE.MeshLambertMaterial({
+color:0xff4444
+})
+);
+
+box.position.set(
+(Math.random()-0.5)*100,
+1,
+(Math.random()-0.5)*100
+);
+
+box.health = 3;
+
+scene.add(box);
+targets.push(box);
+
+}
+
+camera.position.set(0,2,5);
+
+const keys = {};
+
+document.addEventListener("keydown",(e)=>{
+
+keys[e.key.toLowerCase()] = true;
+
+if(e.code==="Space" && grounded){
+
+velocityY = 0.22;
+grounded = false;
+
+}
+
+});
+
+document.addEventListener("keyup",(e)=>{
+
+keys[e.key.toLowerCase()] = false;
+
+});
+
+let yaw = 0;
+let pitch = 0;
+
+document.body.onclick = ()=>{
+
+document.body.requestPointerLock();
+
+};
+
+document.addEventListener("mousemove",(e)=>{
+
+if(document.pointerLockElement===document.body){
+
+yaw -= e.movementX * 0.002;
+pitch -= e.movementY * 0.002;
+
+pitch = Math.max(
+-Math.PI/2,
+Math.min(Math.PI/2,pitch)
+);
+
+}
+
+});
+
+let velocityY = 0;
+let grounded = true;
+
+const raycaster = new THREE.Raycaster();
+
+document.addEventListener("mousedown",()=>{
+
+raycaster.setFromCamera(
+new THREE.Vector2(0,0),
+camera
+);
+
+const hits =
+raycaster.intersectObjects(targets);
+
+if(hits.length>0){
+
+const target = hits[0].object;
+
+target.health--;
+
+target.material.color.set(0xffff00);
+
+setTimeout(()=>{
+if(target.parent){
+target.material.color.set(0xff4444);
+}
+},100);
+
+if(target.health<=0){
+
+scene.remove(target);
+
+const index=
+targets.indexOf(target);
+
+if(index>-1){
+targets.splice(index,1);
+}
+
+}
+
+}
+
+});
+
+function animate(){
+
+requestAnimationFrame(animate);
+
+let speed = 0.15;
+
+if(keys["shift"]){
+speed = 0.3;
+}
+
+const forwardX = Math.sin(yaw);
+const forwardZ = Math.cos(yaw);
+
+if(keys["w"]){
+
+camera.position.x += forwardX * speed;
+camera.position.z += forwardZ * speed;
+
+}
+
+if(keys["s"]){
+
+camera.position.x -= forwardX * speed;
+camera.position.z -= forwardZ * speed;
+
+}
+
+if(keys["a"]){
+
+camera.position.x += forwardZ * speed;
+camera.position.z -= forwardX * speed;
+
+}
+
+if(keys["d"]){
+
+camera.position.x -= forwardZ * speed;
+camera.position.z += forwardX * speed;
+
+}
+
+velocityY -= 0.01;
+
+camera.position.y += velocityY;
+
+if(camera.position.y <= 2){
+
+camera.position.y = 2;
+velocityY = 0;
+grounded = true;
+
+}
+
+camera.rotation.order = "YXZ";
+camera.rotation.y = yaw;
+camera.rotation.x = pitch;
+
+renderer.render(scene,camera);
+
+}
+
+animate();
+
+window.addEventListener("resize",()=>{
+
+camera.aspect =
+window.innerWidth/window.innerHeight;
+
+camera.updateProjectionMatrix();
+
+renderer.setSize(
+window.innerWidth,
+window.innerHeight
+);
+
+});
+
+</script>
 
 </body>
 </html>
