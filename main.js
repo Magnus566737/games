@@ -1,0 +1,1 @@
+<!DOCTYPE html><html><head><title>FPS</title><style>body{margin:0;overflow:hidden}#c{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:white;font-size:30px}</style></head><body><div id="c">+</div><script type="module" src="main.js"></script></body></html>
